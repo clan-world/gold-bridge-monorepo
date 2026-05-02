@@ -63,6 +63,22 @@ pre {
 .cockpit-header p { max-width: 760px; color: #aab6c4; margin: 0.55rem 0 0; }
 .eyebrow { color: #84d9b6; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; font-size: 0.78rem; margin: 0 0 0.45rem; }
 .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.token-settings { position: relative; }
+.token-settings-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  width: min(340px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+  border: 1px solid #3b4656;
+  border-radius: 8px;
+  background: #151b23;
+  padding: 12px;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.35);
+}
+.token-settings-popover .button-row { margin-top: 0; }
 .network-pill {
   border: 1px solid #3b4656;
   border-radius: 999px;

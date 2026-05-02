@@ -1518,6 +1518,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/guide') return send(res, 200, await buildDeploymentGuide(), cors);
     if (req.method === 'GET' && url.pathname === '/api/readiness') return send(res, 200, await buildReadinessReport(), cors);
     if (req.method === 'POST' && url.pathname === '/api/readiness/export') {
+      requireCockpitToken(req);
       const body = await parseBody(req);
       return send(res, 200, await buildReadinessReport({ write: true, manualNotes: body.manualNotes || {} }), cors);
     }

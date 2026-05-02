@@ -8,6 +8,8 @@ import {
   fetchCockpitState,
   fetchDeploymentGuide,
   fetchReadinessReport,
+  COCKPIT_TOKEN_STORAGE_KEY,
+  getCockpitToken,
   previewCockpitAction,
   previewCockpitIntent,
   reconcileCockpitIntent,
@@ -40,6 +42,7 @@ export function CockpitDashboard() {
   const [intents, setIntents] = useState<CockpitIntent[]>([]);
   const [solanaWallet, setSolanaWallet] = useState('');
   const [error, setError] = useState('');
+  const [hasCockpitToken, setHasCockpitToken] = useState(() => Boolean(getCockpitToken()));
   const [loading, setLoading] = useState(false);
   const evmAccount = useAccount();
   const chainId = useChainId();
@@ -75,6 +78,7 @@ export function CockpitDashboard() {
         </div>
         <div className="header-actions">
           <EnvironmentPill state={state} />
+          <CockpitTokenSettings hasToken={hasCockpitToken} onTokenChange={setHasCockpitToken} />
           <AppKitButton />
           <AppKitNetworkButton />
           <button onClick={() => void connectSolanaWallet(setSolanaWallet)}>{solanaWallet ? shortenAddress(solanaWallet) : 'Connect Solana'}</button>
@@ -82,7 +86,7 @@ export function CockpitDashboard() {
         </div>
       </header>
 
-      {error && <section className="banner warning">Cockpit API unavailable: {error}. Start it with <code>pnpm cockpit:api</code>.</section>}
+      {error && <section className="banner warning">{cockpitErrorMessage(error)}</section>}
 
       <nav className="tab-bar" aria-label="Cockpit sections">
         {tabs.map((item) => (
@@ -106,6 +110,61 @@ export function CockpitDashboard() {
         </>
       )}
     </main>
+  );
+}
+
+function cockpitErrorMessage(error: string) {
+  if (error.includes('COCKPIT_API_TOKEN') || error.includes('Invalid cockpit API token')) {
+    return <>Set your <code>COCKPIT_API_TOKEN</code> in the operator settings, then retry the cockpit action.</>;
+  }
+  return <>Cockpit API unavailable: {error}. Start it with <code>pnpm cockpit:api</code>.</>;
+}
+
+function CockpitTokenSettings({ hasToken, onTokenChange }: { hasToken: boolean; onTokenChange: (hasToken: boolean) => void }) {
+  const [open, setOpen] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const envTokenConfigured = Boolean((import.meta.env.VITE_COCKPIT_API_TOKEN as string | undefined) ?? '');
+
+  function saveToken() {
+    const nextToken = tokenInput.trim();
+    if (nextToken) {
+      window.localStorage.setItem(COCKPIT_TOKEN_STORAGE_KEY, nextToken);
+      onTokenChange(true);
+    }
+    setTokenInput('');
+    setOpen(false);
+  }
+
+  function clearToken() {
+    window.localStorage.removeItem(COCKPIT_TOKEN_STORAGE_KEY);
+    onTokenChange(envTokenConfigured);
+    setTokenInput('');
+  }
+
+  return (
+    <div className="token-settings">
+      <button type="button" onClick={() => setOpen((value) => !value)}>
+        {hasToken ? 'Token set' : 'Set token'}
+      </button>
+      {open && (
+        <div className="token-settings-popover">
+          <label className="confirm-field">
+            <span>Cockpit API Token</span>
+            <input
+              type="password"
+              value={tokenInput}
+              onChange={(event) => setTokenInput(event.target.value)}
+              placeholder={hasToken ? 'Token currently set' : 'Paste COCKPIT_API_TOKEN'}
+            />
+          </label>
+          <div className="button-row">
+            <button type="button" onClick={saveToken} disabled={!tokenInput.trim()}>Save</button>
+            <button type="button" onClick={clearToken} disabled={!hasToken}>Clear</button>
+          </div>
+          <p className={hasToken ? 'muted' : 'warning'}>{hasToken ? 'Cockpit token is available for protected operations.' : 'Protected operations will return 401 until a token is set.'}</p>
+        </div>
+      )}
+    </div>
   );
 }
 
