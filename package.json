@@ -1,0 +1,42 @@
+{
+  "name": "gold-bridge-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
+  "scripts": {
+    "doctor": "bash scripts/00-doctor.sh",
+    "review": "node scripts/review-static.mjs",
+    "deploy:base-token": "bash scripts/03-deploy-base-token.sh",
+    "ntt:install": "bash scripts/01-install-ntt-cli.sh",
+    "ntt:init": "bash scripts/02-init-ntt-project.sh",
+    "ntt:overrides": "bash scripts/04-write-ntt-overrides.sh",
+    "ntt:add-solana": "bash scripts/05-add-solana-locking.sh",
+    "ntt:add-base": "bash scripts/06-add-base-burning.sh",
+    "ntt:addresses": "node scripts/07-print-ntt-addresses.mjs",
+    "base:set-minter": "bash scripts/08-set-base-minter.sh",
+    "web:export-config": "node scripts/09-export-web-config.mjs",
+    "ntt:status": "bash scripts/10-ntt-status.sh",
+    "ntt:push": "bash scripts/11-ntt-push.sh",
+    "ntt:test-transfer": "bash scripts/12-test-transfer.sh",
+    "artifacts:export": "node scripts/14-export-deployment-artifacts.mjs",
+    "preflight": "bash scripts/15-preflight.sh",
+    "liquidity:recover-base": "bash scripts/16-recover-base-liquidity.sh",
+    "base:proxy-info": "bash scripts/17-print-base-proxy-info.sh",
+    "timelock:schedule": "bash scripts/18-timelock-schedule.sh",
+    "timelock:execute": "bash scripts/19-timelock-execute.sh",
+    "cockpit:api": "node scripts/20-cockpit-api.mjs",
+    "rehearsal:snapshot": "node scripts/21-rehearsal-snapshot.mjs",
+    "rehearsal:prepare-fresh": "node scripts/22-prepare-fresh-rehearsal.mjs",
+    "metrics": "node scripts/13-fetch-metrics.mjs",
+    "web": "pnpm --filter @gold-bridge/web dev",
+    "cockpit": "pnpm cockpit:api",
+    "build": "pnpm --filter '@gold-bridge/*' build",
+    "typecheck": "pnpm --filter '@gold-bridge/*' typecheck",
+    "lint": "pnpm --filter '@gold-bridge/*' lint",
+    "clean": "pnpm --filter '@gold-bridge/*' clean",
+    "test:contracts": "pnpm --filter @gold-bridge/contracts test"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
