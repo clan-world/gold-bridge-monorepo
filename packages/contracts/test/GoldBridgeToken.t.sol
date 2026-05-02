@@ -145,6 +145,27 @@ contract GoldBridgeTokenTest {
         require(token.balanceOf(address(this)) == 40, "bad recipient balance");
     }
 
+    function testRecoveryAmountExceedsBalanceUsesExplicitError() public {
+        token.mint(address(actor), 25);
+        token.setRecoveryAllowed(address(actor), true);
+
+        bool reverted;
+        try token.recoverFromAllowedSource(address(actor), address(this), 26) {
+            reverted = false;
+        } catch (bytes memory reason) {
+            reverted = true;
+            bytes4 selector;
+            assembly {
+                selector := mload(add(reason, 32))
+            }
+            require(
+                selector == GoldBridgeToken.RecoveryAmountExceedsBalance.selector,
+                "wrong recovery error"
+            );
+        }
+        require(reverted, "excess recovery did not revert");
+    }
+
     function testRecoveryCanBeDisabledForever() public {
         token.setRecoveryAllowed(address(actor), true);
         token.disableRecoveryForever();

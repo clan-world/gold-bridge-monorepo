@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { encodeAbiParameters } from 'viem';
 import {
   chainConfig,
   loadDeployment,
@@ -18,6 +19,7 @@ const port = Number(process.env.COCKPIT_API_PORT || 8787);
 const host = process.env.COCKPIT_API_HOST || '127.0.0.1';
 const envPath = process.env.ENV_FILE || path.join(root, '.env');
 const env = () => readEnvFile(envPath);
+const vitePort = process.env.PORT || '5173';
 
 const ADMIN_SLOT = '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103';
 const IMPLEMENTATION_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
@@ -1373,7 +1375,7 @@ function encodeBytes32(value) {
 function encodeBytes(value) {
   const raw = strip0x(value || '0x');
   if (!/^[a-fA-F0-9]*$/.test(raw) || raw.length % 2 !== 0) throw httpError(400, `Invalid bytes: ${value}`);
-  return `${encodeUint(raw.length / 2)}${raw.padEnd(Math.ceil(raw.length / 64) * 64, '0')}`;
+  return strip0x(encodeAbiParameters([{ type: 'bytes' }], [`0x${raw}`]));
 }
 
 function encodeCall(name, args) {
@@ -1430,6 +1432,31 @@ function httpError(status, message) {
   return error;
 }
 
+function allowedCorsOrigins() {
+  const defaults = [
+    'https://bridge-dev.clan-world.com',
+    `http://localhost:${vitePort}`,
+    `http://127.0.0.1:${vitePort}`,
+  ];
+  const configured = String(process.env.COCKPIT_CORS_ORIGINS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return new Set([...defaults, ...configured]);
+}
+
+function corsForRequest(req) {
+  const origin = req.headers.origin;
+  if (!origin) return { allowed: true, headers: {} };
+  if (!allowedCorsOrigins().has(origin)) {
+    return { allowed: false, headers: {} };
+  }
+  return {
+    allowed: true,
+    headers: { 'access-control-allow-origin': origin, vary: 'Origin' },
+  };
+}
+
 async function parseBody(req) {
   let body = '';
   for await (const chunk of req) body += chunk.toString();
@@ -1441,51 +1468,54 @@ async function parseBody(req) {
   }
 }
 
-function send(res, status, payload) {
+function send(res, status, payload, cors = { headers: {} }) {
   const json = JSON.stringify(payload, null, 2);
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
-    'access-control-allow-origin': process.env.COCKPIT_CORS_ORIGIN || '*',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'access-control-allow-headers': 'content-type',
+    ...cors.headers,
   });
   res.end(json);
 }
 
 const server = http.createServer(async (req, res) => {
+  let cors = { headers: {} };
   try {
-    if (req.method === 'OPTIONS') return send(res, 204, {});
+    cors = corsForRequest(req);
+    if (!cors.allowed) return send(res, 403, { error: 'Origin not allowed.' });
+    if (req.method === 'OPTIONS') return send(res, 204, {}, cors);
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
-    if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, await buildState());
-    if (req.method === 'GET' && url.pathname === '/api/guide') return send(res, 200, await buildDeploymentGuide());
-    if (req.method === 'GET' && url.pathname === '/api/readiness') return send(res, 200, await buildReadinessReport());
+    if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, await buildState(), cors);
+    if (req.method === 'GET' && url.pathname === '/api/guide') return send(res, 200, await buildDeploymentGuide(), cors);
+    if (req.method === 'GET' && url.pathname === '/api/readiness') return send(res, 200, await buildReadinessReport(), cors);
     if (req.method === 'POST' && url.pathname === '/api/readiness/export') {
       const body = await parseBody(req);
-      return send(res, 200, await buildReadinessReport({ write: true, manualNotes: body.manualNotes || {} }));
+      return send(res, 200, await buildReadinessReport({ write: true, manualNotes: body.manualNotes || {} }), cors);
     }
     if (req.method === 'GET' && url.pathname === '/api/actions') {
       const currentEnv = env();
-      return send(res, 200, { actions: ACTIONS.map((item) => publicAction(item, currentEnv)) });
+      return send(res, 200, { actions: ACTIONS.map((item) => publicAction(item, currentEnv)) }, cors);
     }
     if (req.method === 'GET' && url.pathname === '/api/intents') {
       const currentEnv = env();
-      return send(res, 200, { intents: INTENTS.map((item) => publicIntent(item, currentEnv)) });
+      return send(res, 200, { intents: INTENTS.map((item) => publicIntent(item, currentEnv)) }, cors);
     }
     const actionMatch = url.pathname.match(/^\/api\/actions\/([^/]+)\/(preview|run)$/);
     if (req.method === 'POST' && actionMatch) {
       const [, id, mode] = actionMatch;
       const body = await parseBody(req);
-      return send(res, 200, mode === 'preview' ? previewAction(id, body) : await runAction(id, body));
+      return send(res, 200, mode === 'preview' ? previewAction(id, body) : await runAction(id, body), cors);
     }
     const intentMatch = url.pathname.match(/^\/api\/intents\/([^/]+)\/(preview|reconcile)$/);
     if (req.method === 'POST' && intentMatch) {
       const [, id, mode] = intentMatch;
       const body = await parseBody(req);
-      return send(res, 200, mode === 'preview' ? previewIntent(id, body) : await reconcileIntent(id, body));
+      return send(res, 200, mode === 'preview' ? previewIntent(id, body) : await reconcileIntent(id, body), cors);
     }
-    return send(res, 404, { error: 'Not found' });
+    return send(res, 404, { error: 'Not found' }, cors);
   } catch (error) {
-    return send(res, error.status || 500, { error: String(error.message || error) });
+    return send(res, error.status || 500, { error: String(error.message || error) }, cors);
   }
 });
 

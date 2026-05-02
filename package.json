@@ -36,6 +36,9 @@
     "clean": "pnpm --filter '@gold-bridge/*' clean",
     "test:contracts": "pnpm --filter @gold-bridge/contracts test"
   },
+  "dependencies": {
+    "viem": "^2.48.7"
+  },
   "devDependencies": {
     "typescript": "^5.8.3"
   }

@@ -3,6 +3,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib/env.sh"
 
 NTT_PROJECT_DIR="${NTT_PROJECT_DIR:-ntt}"
+BASE_CHAIN="${NTT_BASE_CHAIN:-BaseSepolia}"
 require_var WORMHOLE_NETWORK
 require_var EVM_PRIVATE_KEY
 require_var TEST_TRANSFER_SOURCE_CHAIN
@@ -37,7 +38,7 @@ if [[ -n "${SOLANA_RPC_URL:-}" ]]; then
 fi
 
 if [[ -n "${BASE_RPC_URL:-}" ]]; then
-  args+=(--rpc "BaseSepolia=$BASE_RPC_URL")
+  args+=(--rpc "$BASE_CHAIN=$BASE_RPC_URL")
 fi
 
 ntt "${args[@]}"

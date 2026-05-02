@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export function readEnvFile(envPath) {
   const env = { ...process.env };
@@ -21,7 +22,7 @@ export function readEnvFile(envPath) {
 }
 
 export function repoRootFromScript() {
-  return path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 }
 
 export function loadDeployment(root, env) {

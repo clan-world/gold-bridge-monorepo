@@ -34,6 +34,7 @@ contract GoldBridgeToken is Initializable, ERC20Upgradeable, OwnableUpgradeable,
     error InvalidRecoveryRecipientZeroAddress();
     error RecoveryDisabled();
     error RecoverySourceNotAllowed(address source);
+    error RecoveryAmountExceedsBalance(address source, uint256 requested, uint256 available);
 
     event RecoveryAllowedSet(address indexed source, bool allowed);
     event RecoveryDisabledForever();
@@ -117,6 +118,8 @@ contract GoldBridgeToken is Initializable, ERC20Upgradeable, OwnableUpgradeable,
         if (recoveryDisabled) revert RecoveryDisabled();
         if (!recoveryAllowed[source]) revert RecoverySourceNotAllowed(source);
         if (recipient == address(0)) revert InvalidRecoveryRecipientZeroAddress();
+        uint256 available = balanceOf(source);
+        if (available < amount) revert RecoveryAmountExceedsBalance(source, amount, available);
 
         _transfer(source, recipient, amount);
         emit RecoveredFromAllowedSource(source, recipient, amount);

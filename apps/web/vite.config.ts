@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: Number(process.env.PORT || 5173),
-    allowedHosts: ['bridge-dev.clan-world.com']
+    allowedHosts: ['localhost', '127.0.0.1', 'bridge-dev.clan-world.com'],
   }
 });
