@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -208,7 +209,6 @@ function publicAction(actionDef, currentEnv) {
     mutates: actionDef.mutates,
     risk: actionDef.risk,
     envFields: Object.fromEntries(Object.entries(actionDef.env || {}).map(([key, value]) => [key, resolveTemplate(value, currentEnv)])),
-    requiredConfirmation: confirmationFor(actionDef, currentEnv),
     expectedMutation: actionDef.expectedMutation,
     expectedOutputs: actionDef.expectedOutputs,
     gotchas: actionDef.gotchas,
@@ -273,7 +273,6 @@ function publicIntent(intentDef, currentEnv) {
   return {
     ...intentDef,
     chainId: baseChainId(currentEnv),
-    requiredConfirmation: intentConfirmation(intentDef, currentEnv),
   };
 }
 
@@ -287,6 +286,7 @@ function previewIntent(id, body = {}) {
   }
   const common = {
     ...publicIntent(intentDef, currentEnv),
+    requiredConfirmation: intentConfirmation(intentDef, currentEnv),
     expectedSigner: expectedBaseSigner(currentEnv),
     value: '0',
     artifactUpdate: [],
@@ -1087,7 +1087,7 @@ function step(config) {
 
 function stepStatus(done, blockers = []) {
   if (done) return 'done';
-  return blockers.length ? 'ready' : 'ready';
+  return blockers.length ? 'blocked' : 'ready';
 }
 
 function field(key, label, value, editable, fixed = false, secret = false, help = '') {
@@ -1432,29 +1432,57 @@ function httpError(status, message) {
   return error;
 }
 
-function allowedCorsOrigins() {
-  const defaults = [
-    'https://bridge-dev.clan-world.com',
-    `http://localhost:${vitePort}`,
-    `http://127.0.0.1:${vitePort}`,
-  ];
-  const configured = String(process.env.COCKPIT_CORS_ORIGINS || '')
+function configuredCorsOrigins() {
+  return String(process.env.COCKPIT_CORS_ORIGIN || '')
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
-  return new Set([...defaults, ...configured]);
+}
+
+function allowedCorsOrigins() {
+  return ['http://localhost:*', 'http://127.0.0.1:*', ...configuredCorsOrigins()];
+}
+
+function isDefaultLocalhostOrigin(origin) {
+  try {
+    const parsed = new URL(origin);
+    return parsed.protocol === 'http:' && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1');
+  } catch {
+    return false;
+  }
 }
 
 function corsForRequest(req) {
   const origin = req.headers.origin;
   if (!origin) return { allowed: true, headers: {} };
-  if (!allowedCorsOrigins().has(origin)) {
+  const configured = new Set(configuredCorsOrigins());
+  if (!isDefaultLocalhostOrigin(origin) && !configured.has(origin)) {
     return { allowed: false, headers: {} };
   }
   return {
     allowed: true,
     headers: { 'access-control-allow-origin': origin, vary: 'Origin' },
   };
+}
+
+function tokenMatches(actual, expected) {
+  const actualBytes = Buffer.from(String(actual || ''));
+  const expectedBytes = Buffer.from(String(expected || ''));
+  return actualBytes.length === expectedBytes.length && crypto.timingSafeEqual(actualBytes, expectedBytes);
+}
+
+function requireCockpitToken(req) {
+  const expected = process.env.COCKPIT_API_TOKEN || '';
+  if (!expected) {
+    console.error('[cockpit-api] Refusing privileged cockpit request: COCKPIT_API_TOKEN is not set. Set it in .env (for example: openssl rand -hex 32).');
+    throw httpError(401, 'COCKPIT_API_TOKEN is required for this operation.');
+  }
+  const auth = String(req.headers.authorization || '');
+  const bearer = auth.match(/^Bearer\s+(.+)$/i)?.[1] || '';
+  const headerToken = String(req.headers['x-cockpit-token'] || '');
+  if (!tokenMatches(bearer, expected) && !tokenMatches(headerToken, expected)) {
+    throw httpError(401, 'Invalid cockpit API token.');
+  }
 }
 
 async function parseBody(req) {
@@ -1473,7 +1501,7 @@ function send(res, status, payload, cors = { headers: {} }) {
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-headers': 'content-type, authorization, x-cockpit-token',
     ...cors.headers,
   });
   res.end(json);
@@ -1504,12 +1532,14 @@ const server = http.createServer(async (req, res) => {
     const actionMatch = url.pathname.match(/^\/api\/actions\/([^/]+)\/(preview|run)$/);
     if (req.method === 'POST' && actionMatch) {
       const [, id, mode] = actionMatch;
+      requireCockpitToken(req);
       const body = await parseBody(req);
       return send(res, 200, mode === 'preview' ? previewAction(id, body) : await runAction(id, body), cors);
     }
     const intentMatch = url.pathname.match(/^\/api\/intents\/([^/]+)\/(preview|reconcile)$/);
     if (req.method === 'POST' && intentMatch) {
       const [, id, mode] = intentMatch;
+      requireCockpitToken(req);
       const body = await parseBody(req);
       return send(res, 200, mode === 'preview' ? previewIntent(id, body) : await reconcileIntent(id, body), cors);
     }
@@ -1521,4 +1551,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(port, host, () => {
   console.log(`GOLD cockpit API listening on http://${host}:${port}`);
+  console.log('[cockpit-api] CORS allowlist:', allowedCorsOrigins());
 });
