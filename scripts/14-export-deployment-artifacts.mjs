@@ -31,7 +31,7 @@ const summary = {
       rpcUrl: env.SOLANA_RPC_URL || '',
       deployer: env.SOLANA_DEPLOYER_ADDRESS || '',
       tokenMint: env.SOLANA_TOKEN_MINT || solana.token || '',
-      tokenDecimals: Number(env.SOLANA_TOKEN_DECIMALS || 9),
+      tokenDecimals: Number(env.SOLANA_TOKEN_DECIMALS || 6),
       manager: env.SOLANA_NTT_MANAGER_ADDRESS || solana.manager || '',
       transceiver: env.SOLANA_NTT_TRANSCEIVER_ADDRESS || transceiverAddress(solana),
       mode: solana.mode || '',

@@ -10,7 +10,7 @@ export const goldDeployment: GoldDeployment = {
     "token": "6NLCfbAzMyykwjwifAZr8WRBTPsb8u5s1uAVvGBGGa4r",
     "manager": "DQAKHw5eimsucy37oTgwRWCEBrJhyfht6Z6YPx6ut4hH",
     "transceiver": "81fVCz1fVChbZkqgmzFkudVuaAMDkTrK2gTWwNLi2k7M",
-    "decimals": 9,
+    "decimals": 6,
     "rpcUrl": "https://api.devnet.solana.com",
     "explorerCluster": "devnet"
   },
@@ -19,7 +19,7 @@ export const goldDeployment: GoldDeployment = {
     "token": "0xF6F49EAf9EA71e69450191aFe22EFaed8E2f7995",
     "manager": "0x2B602BbF837Bd845Cc8b40AE70Dc6AB5b191eF3c",
     "transceiver": "0x9a683a5464aCf816dc5e87F8686828f063e54104",
-    "decimals": 9,
+    "decimals": 6,
     "rpcUrl": "https://sepolia.base.org",
     "explorerUrl": "https://sepolia.basescan.org"
   },

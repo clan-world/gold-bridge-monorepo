@@ -56,7 +56,7 @@ contract GoldBridgeTokenTest {
     function testInitializer() public view {
         require(keccak256(bytes(token.name())) == keccak256(bytes("Gold")), "bad name");
         require(keccak256(bytes(token.symbol())) == keccak256(bytes("GOLD")), "bad symbol");
-        require(token.decimals() == 9, "bad decimals");
+        require(token.decimals() == 6, "bad decimals");
         require(token.owner() == address(this), "bad owner");
         require(token.minter() == address(this), "bad minter");
         require(!token.recoveryDisabled(), "recovery disabled");
@@ -94,19 +94,19 @@ contract GoldBridgeTokenTest {
     }
 
     function testClanWorldCompatibleAllowancePull() public {
-        token.mint(address(actor), 1_000_000_000);
+        token.mint(address(actor), 1_000_000);
 
-        actor.approveToken(token, address(this), 400_000_000);
-        require(token.allowance(address(actor), address(this)) == 400_000_000, "bad allowance");
+        actor.approveToken(token, address(this), 400_000);
+        require(token.allowance(address(actor), address(this)) == 400_000, "bad allowance");
 
         require(
-            token.transferFrom(address(actor), address(this), 250_000_000), "transferFrom failed"
+            token.transferFrom(address(actor), address(this), 250_000), "transferFrom failed"
         );
 
-        require(token.balanceOf(address(actor)) == 750_000_000, "bad source balance");
-        require(token.balanceOf(address(this)) == 250_000_000, "bad recipient balance");
+        require(token.balanceOf(address(actor)) == 750_000, "bad source balance");
+        require(token.balanceOf(address(this)) == 250_000, "bad recipient balance");
         require(
-            token.allowance(address(actor), address(this)) == 150_000_000, "bad remaining allowance"
+            token.allowance(address(actor), address(this)) == 150_000, "bad remaining allowance"
         );
     }
 
@@ -195,7 +195,7 @@ contract GoldBridgeTokenTest {
             deployProxyToken();
 
         require(ProxyAdmin(proxyAdmin).owner() == address(timelock), "admin owner not timelock");
-        require(proxyToken.decimals() == 9, "bad proxy decimals");
+        require(proxyToken.decimals() == 6, "bad proxy decimals");
     }
 
     function testUpgradeToV2PreservesStateAndRemovesRecoveryAbi() public {
@@ -223,7 +223,7 @@ contract GoldBridgeTokenTest {
         require(upgraded.allowance(address(actor), address(this)) == 200, "allowance not preserved");
         require(upgraded.minter() == address(this), "minter not preserved");
         require(upgraded.owner() == address(timelock), "owner not preserved");
-        require(upgraded.decimals() == 9, "decimals changed");
+        require(upgraded.decimals() == 6, "decimals changed");
 
         (bool ok,) = address(upgraded)
             .call(

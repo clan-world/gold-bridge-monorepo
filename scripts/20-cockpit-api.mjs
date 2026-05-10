@@ -523,7 +523,7 @@ function buildNttDiagnostics(currentEnv, deployment, addresses, live) {
     gotchas: [
       'Solana NTT deployment is local-keypair/CLI driven, not browser-wallet signed.',
       'Base NTT add-chain uses local EVM_PRIVATE_KEY until wallet-native NTT deployment is implemented.',
-      'NTT rate-limit precision differs by chain; do not infer all values from the 9-decimal GOLD token.',
+      'NTT rate-limit precision differs by chain; do not infer all values from the 6-decimal GOLD token.',
       'Base -> Solana proof transfers may need TEST_TRANSFER_DESTINATION_MSG_VALUE for executor rent/gas.',
     ],
   };
@@ -589,7 +589,7 @@ function authorityView(currentEnv, addresses, live) {
 }
 
 function checksView(currentEnv, addresses, live, deployment) {
-  const expectedDecimals = Number(currentEnv.SOLANA_TOKEN_DECIMALS || 9);
+  const expectedDecimals = Number(currentEnv.SOLANA_TOKEN_DECIMALS || 6);
   const checks = [
     check('env', 'Environment file present', fs.existsSync(envPath)),
     check('solana-token', 'Solana GOLD mint configured', Boolean(addresses.solana.token)),
@@ -655,7 +655,7 @@ async function buildDeploymentGuide() {
 function guidePhases(steps) {
   const definitions = [
     ['environment', 'Environment and Wallets', 'Confirm local tools, chain pair, RPCs, wallets, and rehearsal isolation.'],
-    ['base-proxy', 'Base GOLD Proxy', 'Deploy or reconcile the upgradeable 9-decimal Base GOLD token stack.'],
+    ['base-proxy', 'Base GOLD Proxy', 'Deploy or reconcile the upgradeable 6-decimal Base GOLD token stack.'],
     ['ntt', 'NTT Project and Managers', 'Create the Wormhole NTT project and deploy locking/burning managers.'],
     ['handoff', 'Rate Limits and Minter Handoff', 'Set conservative limits and hand Base minting to the NTT manager.'],
     ['proof', 'Verification and Proof Transfers', 'Run preflight, status, and tiny two-way bridge proofs.'],
@@ -696,7 +696,7 @@ function guideSteps(state, readiness) {
         field('wormholeNetwork', 'Wormhole network', state.environment.wormholeNetwork, false, true),
         field('solanaChain', 'Solana chain', state.addresses.solana.chain, false, true),
         field('baseChain', 'Base chain', state.addresses.base.chain, false, true),
-        field('decimals', 'GOLD decimals', '9', false, true),
+        field('decimals', 'GOLD decimals', '6', false, true),
       ],
       editableInputs: [
         field('SOLANA_RPC_URL', 'Solana RPC', state.environment.rpc.solana, true),
@@ -754,7 +754,7 @@ function guideSteps(state, readiness) {
       phase: 'base-proxy',
       label: 'Deploy Base GOLD proxy',
       description: 'Wallet-sign the Base GOLD proxy stack deployment and reconcile local addresses.',
-      why: 'This creates the 9-decimal Base representation that Wormhole NTT will mint/burn.',
+      why: 'This creates the 6-decimal Base representation that Wormhole NTT will mint/burn.',
       mode: 'wallet-signed',
       status: stepStatus(Boolean(state.addresses.base.token && state.proxy.admin), ['snapshot-baseline']),
       dependsOn: ['snapshot-baseline'],
@@ -762,7 +762,7 @@ function guideSteps(state, readiness) {
       risk: 'high',
       fixedInputs: [
         field('proxyPattern', 'Proxy pattern', 'TransparentUpgradeableProxy', false, true),
-        field('tokenDecimals', 'Token decimals', '9', false, true),
+        field('tokenDecimals', 'Token decimals', '6', false, true),
       ],
       editableInputs: [
         field('BASE_TOKEN_NAME', 'Token name', 'Gold', true),
@@ -1141,15 +1141,15 @@ function readinessItems(state) {
     ? passFail(state.token.baseDecimals === expectedDecimals, `Expected Base decimals ${expectedDecimals}, got ${state.token.baseDecimals}.`, `Base decimals ${state.token.baseDecimals}.`)
     : ['unknown', 'Base decimals not loaded from RPC.'];
 
-  const codeOk = sourceContains('packages/contracts/src/GoldBridgeToken.sol', 'GOLD_DECIMALS = 9')
+  const codeOk = sourceContains('packages/contracts/src/GoldBridgeToken.sol', 'GOLD_DECIMALS = 6')
     && fs.existsSync(path.join(root, 'packages/contracts/out/UpgradeableGoldDeployer.sol/UpgradeableGoldDeployer.json'));
 
   return [
     item('solana-token', 'Token', 'Solana GOLD mint configured', solanaTokenStatus, solanaTokenDetail, 'Set SOLANA_TOKEN_MINT to the canonical GOLD SPL mint.'),
-    item('solana-decimals', 'Token', 'Solana GOLD has 9 decimals', solanaDecimalsStatus, solanaDecimalsDetail, 'Confirm the canonical mint is 9 decimals or redeploy Base token design.'),
+    item('solana-decimals', 'Token', 'Solana GOLD has 6 decimals', solanaDecimalsStatus, solanaDecimalsDetail, 'Confirm the canonical mint is 6 decimals or redeploy Base token design.'),
     item('base-token', 'Token', 'Base GOLD proxy configured', baseTokenStatus, baseTokenDetail, 'Deploy or reconcile Base GOLD proxy.'),
-    item('base-decimals', 'Token', 'Base GOLD has 9 decimals', baseDecimalsStatus, baseDecimalsDetail, 'Deploy the 9-decimal GoldBridgeToken proxy.'),
-    item('contract-code', 'Code', 'Contract source/artifacts match 9-decimal bridge design', codeOk ? 'pass' : 'fail', codeOk ? 'GoldBridgeToken source and deploy artifact found.' : 'Contract source or Foundry artifact missing.', 'Run forge build/test and confirm GoldBridgeToken fixes decimals at 9.'),
+    item('base-decimals', 'Token', 'Base GOLD has 6 decimals', baseDecimalsStatus, baseDecimalsDetail, 'Deploy the 6-decimal GoldBridgeToken proxy.'),
+    item('contract-code', 'Code', 'Contract source/artifacts match 6-decimal bridge design', codeOk ? 'pass' : 'fail', codeOk ? 'GoldBridgeToken source and deploy artifact found.' : 'Contract source or Foundry artifact missing.', 'Run forge build/test and confirm GoldBridgeToken fixes decimals at 6.'),
     item('proxy-shape', 'Base Proxy', 'Base token is ERC-1967 proxy', state.proxy.admin && state.proxy.implementation ? 'pass' : 'fail', state.proxy.admin ? `ProxyAdmin ${state.proxy.admin}, implementation ${state.proxy.implementation}.` : 'Proxy slots were not found.', 'Deploy the transparent proxy stack or fix BASE_TOKEN_ADDRESS.'),
     item('token-owner', 'Authorities', 'Token owner is timelock', equalsAddress(state.token.owner, state.addresses.base.timelock) ? 'pass' : 'fail', `owner=${state.token.owner || 'unknown'}, timelock=${state.addresses.base.timelock || 'unknown'}.`, 'Transfer token ownership to the timelock.'),
     item('proxy-admin-owner', 'Authorities', 'ProxyAdmin owner is timelock', equalsAddress(state.proxy.proxyAdminOwner, state.addresses.base.timelock) ? 'pass' : 'fail', `proxyAdminOwner=${state.proxy.proxyAdminOwner || 'unknown'}, timelock=${state.addresses.base.timelock || 'unknown'}.`, 'Transfer ProxyAdmin ownership to the timelock.'),

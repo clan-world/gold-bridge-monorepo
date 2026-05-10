@@ -12,7 +12,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {INttToken} from "./interfaces/INttToken.sol";
 
 /// @title GoldBridgeToken
-/// @notice Upgradeable 9-decimal Base representation of Solana-canonical GOLD.
+/// @notice Upgradeable 6-decimal Base representation of Solana-canonical GOLD.
 /// @dev This token is designed for Wormhole NTT burning mode. The NTT manager is expected to
 /// become `minter` after deployment, allowing it to mint inbound GOLD and burn outbound GOLD.
 ///
@@ -24,7 +24,7 @@ import {INttToken} from "./interfaces/INttToken.sol";
 /// - User wallets should not be allowlisted.
 /// - Governance can permanently disable recovery with `disableRecoveryForever`.
 contract GoldBridgeToken is Initializable, ERC20Upgradeable, OwnableUpgradeable, INttToken {
-    uint8 public constant GOLD_DECIMALS = 9;
+    uint8 public constant GOLD_DECIMALS = 6;
 
     address public minter;
     bool public recoveryDisabled;
@@ -70,7 +70,7 @@ contract GoldBridgeToken is Initializable, ERC20Upgradeable, OwnableUpgradeable,
         emit NewMinter(address(0), initialMinter_);
     }
 
-    /// @notice Returns 9 decimals to match Solana GOLD accounting.
+    /// @notice Returns 6 decimals to match Solana GOLD accounting.
     function decimals() public pure override returns (uint8) {
         return GOLD_DECIMALS;
     }

@@ -16,7 +16,7 @@ import {INttToken} from "./interfaces/INttToken.sol";
 /// @dev Storage layout intentionally preserves V1 state while removing the recovery API from the
 /// public ABI. Upgrade authority remains with the proxy admin timelock unless separately revoked.
 contract GoldBridgeTokenV2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, INttToken {
-    uint8 public constant GOLD_DECIMALS = 9;
+    uint8 public constant GOLD_DECIMALS = 6;
 
     address public minter;
     bool private recoveryDisabledV1;

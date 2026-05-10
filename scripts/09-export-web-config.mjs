@@ -24,7 +24,7 @@ const config = {
     token: solana.token || env.SOLANA_TOKEN_MINT || '',
     manager: solana.manager || env.SOLANA_NTT_MANAGER_ADDRESS || '',
     transceiver: transceiverAddress(solana) || env.SOLANA_NTT_TRANSCEIVER_ADDRESS || '',
-    decimals: Number(env.SOLANA_TOKEN_DECIMALS || 9),
+    decimals: Number(env.SOLANA_TOKEN_DECIMALS || 6),
     rpcUrl: env.SOLANA_RPC_URL || '',
     explorerCluster: env.VITE_SOLANA_EXPLORER_CLUSTER || (deployment.network === 'Mainnet' ? '' : 'devnet')
   },
@@ -33,7 +33,7 @@ const config = {
     token: base.token || env.BASE_TOKEN_ADDRESS || '',
     manager: base.manager || env.BASE_NTT_MANAGER_ADDRESS || '',
     transceiver: transceiverAddress(base) || env.BASE_NTT_TRANSCEIVER_ADDRESS || '',
-    decimals: Number(env.SOLANA_TOKEN_DECIMALS || 9),
+    decimals: Number(env.SOLANA_TOKEN_DECIMALS || 6),
     rpcUrl: env.BASE_RPC_URL || '',
     explorerUrl: env.BASE_EXPLORER_URL || (baseChainName === 'Base' ? 'https://basescan.org' : 'https://sepolia.basescan.org')
   },
