@@ -4,14 +4,14 @@ This is the short path for proving Solana GOLD can bridge to Base with Wormhole 
 
 ## Shape
 
-Solana is canonical. Its NTT manager runs in locking mode. Base is the spoke chain. Its GOLD ERC-20 runs at 9 decimals and the Base NTT manager runs in burning mode.
+Solana is canonical. Its NTT manager runs in locking mode. Base is the spoke chain. Its GOLD ERC-20 runs at 6 decimals and the Base NTT manager runs in burning mode.
 
 ```mermaid
 flowchart LR
   user((User))
 
   subgraph solana[Solana devnet]
-    spl[GOLD SPL mint\n9 decimals]
+    spl[GOLD SPL mint\n6 decimals]
     sMgr[Solana NTT manager\nlocking mode]
     sWh[Wormhole transceiver]
   end
@@ -21,7 +21,7 @@ flowchart LR
   subgraph base[Base Sepolia]
     bWh[Wormhole transceiver]
     bMgr[Base NTT manager\nburning mode]
-    erc[Base GOLD ERC-20\n9 decimals]
+    erc[Base GOLD ERC-20\n6 decimals]
   end
 
   user --> spl

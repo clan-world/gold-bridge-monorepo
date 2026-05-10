@@ -12,7 +12,7 @@ The Solana NTT manager is deployed in locking mode. That means users deposit GOL
 
 Base is the spoke chain.
 
-The Base GOLD ERC-20 representation is deployed by this repo behind an OpenZeppelin transparent upgradeable proxy. It is fixed at 9 decimals, matching the expected Solana GOLD precision. The Base NTT manager is deployed in burning mode. It mints Base GOLD when Solana GOLD is locked, and burns Base GOLD when users bridge back to Solana.
+The Base GOLD ERC-20 representation is deployed by this repo behind an OpenZeppelin transparent upgradeable proxy. It is fixed at 6 decimals, matching the Solana GOLD precision. The Base NTT manager is deployed in burning mode. It mints Base GOLD when Solana GOLD is locked, and burns Base GOLD when users bridge back to Solana.
 
 The proxy admin and token owner should both be controlled by a public timelock. V1 includes an allowlist-scoped recovery hook for contract-held migration liquidity. The hook is intentionally narrow, timelocked, and permanently disableable; V2 removes the recovery ABI while preserving token state.
 
